@@ -18,6 +18,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+import { authService } from "../utils/authService";
 
 const FarmerIllustration = () => {
   const [animate, setAnimate] = useState(false);
@@ -200,6 +201,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [error, setError] = useState("");
 
   const isFarmer = userType === "farmer";
   const isBuyer = userType === "buyer";
@@ -207,17 +209,101 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    setTimeout(() => {
-      const userData = { email, role: userType };
-      login(userData);
-      if (userType === "farmer") {
-        navigate("/dashboard/farmer");
-      } else if (userType === "buyer") {
-        navigate("/dashboard/buyer");
+    try {
+      const { user, token } = await authService.signIn(email, password);
+
+      // Get user profile from backend to determine user type
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/users/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const userProfile = await response.json();
+          const userType = userProfile.userType || "farmer";
+          localStorage.setItem("userType", userType);
+
+          // Update auth context
+          const userData = {
+            email: user.email,
+            role: userType,
+            uid: user.uid,
+            name: user.displayName,
+          };
+          login(userData);
+
+          // Navigate based on user type
+          if (userType === "farmer") {
+            navigate("/dashboard/farmer");
+          } else {
+            navigate("/dashboard/buyer");
+          }
+        } else {
+          // Fallback to selected user type if backend fails
+          localStorage.setItem("userType", userType);
+          const userData = {
+            email: user.email,
+            role: userType,
+            uid: user.uid,
+            name: user.displayName,
+          };
+          login(userData);
+
+          if (userType === "farmer") {
+            navigate("/dashboard/farmer");
+          } else {
+            navigate("/dashboard/buyer");
+          }
+        }
+      } catch (backendError) {
+        console.warn("Backend profile fetch failed:", backendError);
+        // Fallback navigation
+        const userData = {
+          email: user.email,
+          role: userType,
+          uid: user.uid,
+          name: user.displayName,
+        };
+        login(userData);
+
+        if (userType === "farmer") {
+          navigate("/dashboard/farmer");
+        } else {
+          navigate("/dashboard/buyer");
+        }
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      let errorMessage = "Failed to sign in";
+
+      switch (error.code) {
+        case "auth/user-not-found":
+          errorMessage = "No account found with this email";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Incorrect password";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Invalid email address";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Too many failed attempts. Please try again later";
+          break;
+        default:
+          errorMessage = error.message || "Failed to sign in";
+      }
+
+      setError(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleUserTypeChange = (newType) => {
@@ -346,7 +432,9 @@ const LoginPage = () => {
         {/* Bottom Quote */}
         <div
           className={`absolute bottom-4 left-4 right-4 z-10 transition-all duration-700 ${
-            isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+            isTransitioning
+              ? "opacity-0 translate-y-4"
+              : "opacity-100 translate-y-0"
           }`}
         >
           <div className="bg-white/10 dark:bg-gray-800/30 backdrop-blur-md rounded-xl p-3 border border-white/20">
@@ -357,9 +445,11 @@ const LoginPage = () => {
                   : "text-teal-800 dark:text-teal-200"
               }`}
             >
-              "{isFarmer
+              "
+              {isFarmer
                 ? "Every seed planted is a step towards prosperity"
-                : "Fresh produce, directly from the heart of the farm"}"
+                : "Fresh produce, directly from the heart of the farm"}
+              "
             </p>
           </div>
         </div>
@@ -398,7 +488,9 @@ const LoginPage = () => {
             <div className="text-center mb-6">
               <div
                 className={`inline-block transition-all duration-700 ${
-                  isTransitioning ? "opacity-0 scale-90" : "opacity-100 scale-100"
+                  isTransitioning
+                    ? "opacity-0 scale-90"
+                    : "opacity-100 scale-100"
                 }`}
               >
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
@@ -465,6 +557,15 @@ const LoginPage = () => {
               }`}
             >
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                    <p className="text-red-600 dark:text-red-400 text-sm">
+                      {error}
+                    </p>
+                  </div>
+                )}
+
                 {/* Email Field with Enhanced Styling */}
                 <div className="group">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -596,8 +697,8 @@ const LoginPage = () => {
               <div className="mt-4 text-center">
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
                   New to FarmEasy?{" "}
-                  <a
-                    href="/signup"
+                  <button
+                    onClick={() => navigate("/signup")}
                     className={`font-semibold transition-all duration-200 hover:underline ${
                       isFarmer
                         ? "text-green-600 hover:text-green-700 dark:text-green-400"
@@ -605,7 +706,7 @@ const LoginPage = () => {
                     }`}
                   >
                     Create an account
-                  </a>
+                  </button>
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Secure • Trusted • Growing Together

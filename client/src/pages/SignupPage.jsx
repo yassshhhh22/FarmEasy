@@ -20,7 +20,8 @@ import {
   Truck,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
-import { useNavigate } from "react-router-dom"; // Added import for navigation
+import { useNavigate } from "react-router-dom";
+import { authService } from "../utils/authService";
 
 // Animated Illustrations
 const FarmerIllustration = () => {
@@ -206,6 +207,7 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [error, setError] = useState("");
 
   const isFarmer = userType === "farmer";
   const isBuyer = userType === "buyer";
@@ -213,16 +215,70 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    setTimeout(() => {
-      // Navigate to the appropriate dashboard
+    try {
+      const userData = {
+        name: formData.name,
+        phone: formData.phone,
+        userType: userType,
+      };
+
+      const { user, token } = await authService.signUp(
+        formData.email,
+        formData.password,
+        userData
+      );
+
+      // Optional: Send additional user data to your backend
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            name: formData.name,
+            phone: formData.phone,
+            userType: userType,
+          }),
+        });
+      } catch (backendError) {
+        console.warn("Backend profile creation failed:", backendError);
+        // Continue with navigation even if backend fails
+      }
+
+      // Navigate to appropriate dashboard
       if (userType === "farmer") {
         navigate("/dashboard/farmer");
       } else {
         navigate("/dashboard/buyer");
       }
+    } catch (error) {
+      console.error("Signup error:", error);
+      let errorMessage = "Failed to create account";
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "An account with this email already exists";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Password should be at least 6 characters";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Invalid email address";
+          break;
+        default:
+          errorMessage = error.message || "Failed to create account";
+      }
+
+      setError(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleChange = (e) => {
@@ -347,6 +403,13 @@ const SignupPage = () => {
               : "opacity-100 transform translate-y-0"
           }`}
         >
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -485,7 +548,10 @@ const SignupPage = () => {
         >
           <p className="text-gray-600 dark:text-gray-300">
             Already have an account?{" "}
-            <button className="text-green-600 dark:text-teal-600 hover:text-green-500 dark:hover:text-teal-500 font-medium transition-colors">
+            <button
+              onClick={() => navigate("/login")}
+              className="text-green-600 dark:text-teal-600 hover:text-green-500 dark:hover:text-teal-500 font-medium transition-colors"
+            >
               Sign in
             </button>
           </p>
