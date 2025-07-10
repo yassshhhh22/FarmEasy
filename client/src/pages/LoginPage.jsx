@@ -19,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 
-// Animated Illustrations (reused from SignupPage)
 const FarmerIllustration = () => {
   const [animate, setAnimate] = useState(false);
 
