@@ -1,49 +1,50 @@
-const createProfile = async (req, res) => {
-  try {
-    const { uid, email, name, phone, userType } = req.body;
+import User from "../models/user.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import asyncHandler from "express-async-handler";
 
-    // Validate required fields
-    if (!uid || !email || !name || !phone || !userType) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required: uid, email, name, phone, userType",
-      });
-    }
+const createProfile = asyncHandler(async (req, res) => {
+  const { uid, email, name, phone, userType } = req.body;
 
-    // Validate userType
-    const validUserTypes = ["farmer", "contractor", "buyer"]; // Adjust as needed
-    if (!validUserTypes.includes(userType)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user type",
-      });
-    }
-
-    // TODO: Add your database logic here
-    // Example: Save user profile to database
-    // const user = await User.create({ uid, email, name, phone, userType });
-
-    res.status(201).json({
-      success: true,
-      message: "Profile created successfully",
-      data: {
-        uid,
-        email,
-        name,
-        phone,
-        userType,
-      },
-    });
-  } catch (error) {
-    console.error("Profile creation error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+  if (!uid || !email || !name || !phone || !userType) {
+    throw new ApiError(
+      400,
+      "All fields are required: uid, email, name, phone, userType"
+    );
   }
-};
 
-module.exports = {
-  createProfile,
-};
+  const validUserTypes = ["farmer", "contractor", "buyer"];
+  if (!validUserTypes.includes(userType)) {
+    throw new ApiError(400, "Invalid user type");
+  }
+
+  const createdUser = await User.create({ uid, email, name, phone, userType });
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      createdUser,
+      "Profile created successfully"
+    )
+  );
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const { uid, email, name, phone, userType } = req.body;
+    if (!uid) {
+        throw new ApiError(400, "User ID is required for profile update");
+    }
+    const updatedUser = await User.findOneAndUpdate(
+        { uid },
+        { email, name, phone, userType },
+        { new: true, runValidators: true }
+    );
+    if (!user) {    
+        throw new ApiError(404, "User not found");
+    }
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "Profile updated successfully")
+    );
+});
+const app = { createProfile, updateProfile };
+export  default app;

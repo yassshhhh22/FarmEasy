@@ -1,9 +1,11 @@
 import express from "express";
 import User from "../models/user.model.js";
-import { createProfile } from "../controllers/user.controller.js";
+import app from "../controllers/user.controller.js";
 
 const router = express.Router();
 
-router.post("/profile", createProfile);
+router.route("/profile").post(app.createProfile);
+router.post("/update-profile",app.updateProfile);
+
 
 export default router;
