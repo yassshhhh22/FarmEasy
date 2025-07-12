@@ -5,7 +5,7 @@ import app from "../controllers/user.controller.js";
 const router = express.Router();
 
 router.route("/profile").post(app.createProfile);
-router.post("/update-profile",app.updateProfile);
+router.route("/update-profile").post(app.updateProfile);
 
 
 export default router;
