@@ -230,7 +230,6 @@ const SignupPage = () => {
         userData
       );
 
-      // Optional: Send additional user data to your backend
       try {
         await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
           method: "POST",
