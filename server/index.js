@@ -1,21 +1,24 @@
-import express from 'express';
+import express from "express";
 import cors from "cors";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import connectDB from "./config/db.js";
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT 
+const PORT = process.env.PORT;
 
-app.use(cors({
-    origin:process.env.CORS_ORIGIN ,
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
-}));
+  })
+);
 app.use(express.json());
 
 import userRoutes from "./routes/user.routes.js";
 app.use("/api/users", userRoutes);
 
-
 app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+  console.log(`Server is listening on port ${PORT}`);
+  connectDB();
 });
 export default app;
