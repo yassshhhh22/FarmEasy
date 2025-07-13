@@ -1,16 +1,13 @@
-import { auth } from '../config/firebase';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile
-} from 'firebase/auth';
-import axios from 'axios';
+import axios from "axios";
+
+// Set up axios base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+axios.defaults.baseURL = API_BASE_URL;
 
 // Set up axios interceptor for auth token
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -25,21 +22,21 @@ export const authService = {
   // Sign up new user
   async signUp(email, password, userData) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Update user profile with name
-      if (userData.name) {
-        await updateProfile(user, { displayName: userData.name });
-      }
-      
-      // Get ID token
-      const token = await user.getIdToken();
-      
+      const response = await axios.post("/api/auth/signup", {
+        email,
+        password,
+        name: userData.name,
+        phone: userData.phone,
+        userType: userData.userType,
+      });
+
+      const { user, token } = response.data.data;
+
       // Store token in localStorage
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userType', userData.userType);
-      
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userType", userData.userType);
+      localStorage.setItem("user", JSON.stringify(user));
+
       return { user, token };
     } catch (error) {
       throw error;
@@ -49,15 +46,18 @@ export const authService = {
   // Sign in existing user
   async signIn(email, password) {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Get ID token
-      const token = await user.getIdToken();
-      
+      const response = await axios.post("/api/auth/signin", {
+        email,
+        password,
+      });
+
+      const { user, token } = response.data.data;
+
       // Store token in localStorage
-      localStorage.setItem('authToken', token);
-      
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userType", user.userType);
+      localStorage.setItem("user", JSON.stringify(user));
+
       return { user, token };
     } catch (error) {
       throw error;
@@ -67,9 +67,9 @@ export const authService = {
   // Sign out user
   async signOut() {
     try {
-      await signOut(auth);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userType');
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userType");
+      localStorage.removeItem("user");
     } catch (error) {
       throw error;
     }
@@ -77,12 +77,18 @@ export const authService = {
 
   // Get current auth token
   getToken() {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem("authToken");
   },
 
   // Check if user is authenticated
   isAuthenticated() {
-    return !!localStorage.getItem('authToken');
-  }
-};
+    return !!localStorage.getItem("authToken");
+  },
 
+  // Get current user
+  getCurrentUser() {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  },
+};
+  

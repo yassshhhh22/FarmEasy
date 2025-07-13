@@ -2,12 +2,6 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    uid: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
     email: {
       type: String,
       required: true,
@@ -19,6 +13,16 @@ const userSchema = new mongoose.Schema(
         "Please enter a valid email",
       ],
     },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     phone: {
       type: String,
       required: true,
@@ -28,7 +32,7 @@ const userSchema = new mongoose.Schema(
     userType: {
       type: String,
       required: true,
-      enum: ["farmer", "contractor", "buyer"],
+      enum: ["farmer", "buyer"],
       lowercase: true,
     },
   },
@@ -36,7 +40,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
 
 const User = mongoose.model("User", userSchema);
 

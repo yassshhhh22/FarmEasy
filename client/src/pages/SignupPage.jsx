@@ -23,7 +23,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../utils/authService";
 
-// Animated Illustrations
+
 const FarmerIllustration = () => {
   const [animate, setAnimate] = useState(false);
 
@@ -229,27 +229,7 @@ const SignupPage = () => {
         formData.password,
         userData
       );
-
-      try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            uid: user.uid,
-            email: user.email,
-            name: formData.name,
-            phone: formData.phone,
-            userType: userType,
-          }),
-        });
-      } catch (backendError) {
-        console.warn("Backend profile creation failed:", backendError);
-        // Continue with navigation even if backend fails
-      }
-
+      
       // Navigate to appropriate dashboard
       if (userType === "farmer") {
         navigate("/dashboard/farmer");
