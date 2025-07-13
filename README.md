@@ -8,7 +8,7 @@ FarmEasy is a comprehensive platform designed to connect farmers with buyers, en
 FarmEasy/
 ├── server/        # Node.js + Express server
 ├── client/        # React client application
-├── mobile/        # React Native mobile app (optional)
+├── mobile/        # React Native mobile app 
 └── docs/          # Documentation and API specs
 ```
 
@@ -41,7 +41,7 @@ FarmEasy/
 
 ### Core Features
 
-- [ ] User authentication (Farmers & Buyers)
+- [x] User authentication (Farmers & Buyers)
 - [ ] Contract creation and management
 - [ ] Product catalog with pricing
 - [ ] Order tracking and fulfillment
