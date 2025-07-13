@@ -34,26 +34,6 @@ export const createProfile = asyncHandler(async (req, res) => {
   );
 });
 
-export const updateProfile = asyncHandler(async (req, res) => {
-  const { uid, email, name, phone, userType } = req.body;
-  
-  if (!uid) {
-    throw new ApiError(400, "User ID is required for profile update");
-  }
-  
-  const updatedUser = await User.findOneAndUpdate(
-    { uid },
-    { email, name, phone, userType },
-    { new: true, runValidators: true }
-  );
-  
-  if (!updatedUser) {    
-    throw new ApiError(404, "User not found");
-  }
-  
-  return res.status(200).json(
-    new ApiResponse(200, updatedUser, "Profile updated successfully")
-  );
-});
+
 
 
