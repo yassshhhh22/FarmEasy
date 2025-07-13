@@ -3,24 +3,24 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
 
-const createProfile = asyncHandler(async (req, res) => {
-  const { email, name, phone, userType } = req.body;
+export const createProfile = asyncHandler(async (req, res) => {
+  const { email, name, phone, userType,password } = req.body;
 
-  if (!email || !name || !phone || !userType) {
+  if (!email || !name || !phone || !userType || !password) {
     throw new ApiError(
       400,
       "All fields are required: uid, email, name, phone, userType"
     );
   }
 
-  const validUserTypes = ["farmer", "contractor", "buyer"];
+  const validUserTypes = ["farmer", "buyer"];
   if (!validUserTypes.includes(userType)) {
     throw new ApiError(400, "Invalid user type");
   }
 
   
-  const createdUser = await User.create({ email, name, phone, userType });
-  const existingUser = await User.findOne({ uid });
+  const createdUser = await User.create({ email, name, phone, userType ,password });
+  const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new ApiError(409, "User with this UID already exists");
   }
@@ -34,7 +34,7 @@ const createProfile = asyncHandler(async (req, res) => {
   );
 });
 
-const updateProfile = asyncHandler(async (req, res) => {
+export const updateProfile = asyncHandler(async (req, res) => {
   const { uid, email, name, phone, userType } = req.body;
   
   if (!uid) {
@@ -56,5 +56,4 @@ const updateProfile = asyncHandler(async (req, res) => {
   );
 });
 
-const app = { createProfile, updateProfile };
-export  default app;
+
