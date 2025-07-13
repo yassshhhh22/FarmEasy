@@ -18,13 +18,12 @@ const createProfile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid user type");
   }
 
-  // Check if user already exists
   
   const createdUser = await User.create({ email, name, phone, userType });
-  // const existingUser = await User.findOne({ uid });
-  // if (existingUser) {
-  //   throw new ApiError(409, "User with this UID already exists");
-  // }
+  const existingUser = await User.findOne({ uid });
+  if (existingUser) {
+    throw new ApiError(409, "User with this UID already exists");
+  }
 
   return res.status(201).json(
     new ApiResponse(
