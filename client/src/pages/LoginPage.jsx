@@ -18,7 +18,6 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { authService } from "../utils/authService";
 
 const FarmerIllustration = () => {
   const [animate, setAnimate] = useState(false);
@@ -193,8 +192,8 @@ const BuyerIllustration = () => {
 
 const LoginPage = () => {
   const { isDark } = useTheme();
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [userType, setUserType] = useState("farmer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -212,95 +211,49 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const { user, token } = await authService.signIn(email, password);
-
-      // Get user profile from backend to determine user type
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/users/profile`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const userProfile = await response.json();
-          const userType = userProfile.userType || "farmer";
-          localStorage.setItem("userType", userType);
-
-          // Update auth context
-          const userData = {
-            email: user.email,
-            role: userType,
-            uid: user.uid,
-            name: user.displayName,
-          };
-          login(userData);
-
-          // Navigate based on user type
-          if (userType === "farmer") {
-            navigate("/dashboard/farmer");
-          } else {
-            navigate("/dashboard/buyer");
-          }
-        } else {
-          // Fallback to selected user type if backend fails
-          localStorage.setItem("userType", userType);
-          const userData = {
-            email: user.email,
-            role: userType,
-            uid: user.uid,
-            name: user.displayName,
-          };
-          login(userData);
-
-          if (userType === "farmer") {
-            navigate("/dashboard/farmer");
-          } else {
-            navigate("/dashboard/buyer");
-          }
+      // Direct API call to backend for authentication
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            userType,
+          }),
         }
-      } catch (backendError) {
-        console.warn("Backend profile fetch failed:", backendError);
-        // Fallback navigation
-        const userData = {
-          email: user.email,
-          role: userType,
-          uid: user.uid,
-          name: user.displayName,
-        };
-        login(userData);
+      );
 
-        if (userType === "farmer") {
+      if (response.ok) {
+        const userData = await response.json();
+        const actualUserType = userData.userType || userType;
+        localStorage.setItem("userType", actualUserType);
+
+        // Update auth context
+        const authUserData = {
+          email: userData.email,
+          role: actualUserType,
+          uid: userData.uid || userData.id,
+          name: userData.name || userData.displayName,
+        };
+        login(authUserData);
+
+        // Navigate based on user type
+        if (actualUserType === "farmer") {
           navigate("/dashboard/farmer");
         } else {
           navigate("/dashboard/buyer");
         }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to sign in");
       }
     } catch (error) {
       console.error("Login error:", error);
-      let errorMessage = "Failed to sign in";
-
-      switch (error.code) {
-        case "auth/user-not-found":
-          errorMessage = "No account found with this email";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Incorrect password";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "Invalid email address";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Too many failed attempts. Please try again later";
-          break;
-        default:
-          errorMessage = error.message || "Failed to sign in";
-      }
-
-      setError(errorMessage);
+      setError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -721,3 +674,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+                      

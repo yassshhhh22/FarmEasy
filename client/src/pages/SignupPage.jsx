@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../utils/authService";
 
 
 const FarmerIllustration = () => {
@@ -224,12 +223,20 @@ const SignupPage = () => {
         userType: userType,
       };
 
-      const { user, token } = await authService.signUp(
-        formData.email,
-        formData.password,
-        userData
-      );
-      
+      // Simulate API call for signup
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          password: formData.password,
+          userType: userType,
+        }),
+      });
       // Navigate to appropriate dashboard
       if (userType === "farmer") {
         navigate("/dashboard/farmer");
