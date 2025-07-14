@@ -1,8 +1,8 @@
 import User from "../models/user.model.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
-import bcrypt from "bcrypt";
+
 
 export const createProfile = asyncHandler(async (req, res) => {
   const { email, name, phone, userType, password } = req.body;
@@ -26,16 +26,13 @@ export const createProfile = asyncHandler(async (req, res) => {
   if (password.length < 6) {
     throw new ApiError(400, "Password must be at least 6 characters long");
   }
-  
-  const saltRounds = 10;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   const createdUser = await User.create({
     email,
     name,
     phone,
     userType,
-    password: hashedPassword,
+    password,
   });
 
   return res
@@ -53,14 +50,60 @@ export const loginuser = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, "Invalid email or password");
   }
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  };
 
   return res
     .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         200,
-        { userId: user._id, email: user.email, userType: user.userType },
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
         "User logged in successfully"
       )
     );
+});
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $unset: {
+        refreshToken: 1,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
