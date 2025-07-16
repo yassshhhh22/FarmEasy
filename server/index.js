@@ -18,6 +18,8 @@ app.use(cookieParser());
 
 import userRoutes from "./routes/user.routes.js";
 app.use("/api/users", userRoutes);
+import cropRoutes from "./routes/crop.routes.js";
+app.use("/api/crops", cropRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
