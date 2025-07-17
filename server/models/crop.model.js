@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema, Types } from 'mongoose';
 
-const cropSchema = new mongoose.Schema({
+const cropSchema = new Schema({
   farmer: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Types.ObjectId,
     ref: 'User',
     required: true
   },
@@ -48,13 +48,11 @@ const cropSchema = new mongoose.Schema({
     default: 'Active'
   }
 }, {
-  timestamps: true 
+  timestamps: true
 });
 
 cropSchema.index({ farmer: 1, status: 1 });
 cropSchema.index({ category: 1, region: 1 });
 cropSchema.index({ isFlashDeal: 1 });
 
-const Crop = mongoose.model('Crop', cropSchema);
-
-module.exports = Crop;
+export const Crop = mongoose.model('Crop', cropSchema);

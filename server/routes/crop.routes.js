@@ -15,7 +15,7 @@ import { roleMiddleware } from "../middleware/role.middleware.js";
 const router = Router();
 
 // POST /api/crops/add - Farmer adds a new crop listing (Farmer only)
-router.post("/add", verifyJWT, roleMiddleware("Farmer"), addCrop);
+router.post("/add", verifyJWT, roleMiddleware("farmer"), addCrop);
 
 // GET /api/crops/all - Get list of all crops available (Public)
 router.get("/all", getAllCrops);
@@ -23,8 +23,8 @@ router.get("/all", getAllCrops);
 // GET /api/crops/my-crops - Get logged-in farmer's own crop listings (Farmer only)
 router.get(
   "/my-crops",
-  authMiddleware,
-  roleMiddleware("Farmer"),
+  verifyJWT,
+  roleMiddleware("farmer"),
   getFarmerCrops
 );
 
@@ -38,14 +38,9 @@ router.get("/search", searchCrops);
 router.get("/crop/:id", getCropById);
 
 // PATCH /api/crops/edit/:id - Farmer updates a crop listing (Farmer only)
-router.patch("/edit/:id", verifyJWT, roleMiddleware("Farmer"), editCrop);
+router.patch("/edit/:id", verifyJWT, roleMiddleware("farmer"), editCrop);
 
 // DELETE /api/crops/delete/:id - Farmer deletes a crop listing (Farmer only)
-router.delete(
-  "/delete/:id",
-  verifyJWT,
-  roleMiddleware("Farmer"),
-  deleteCrop
-);
+router.delete("/delete/:id", verifyJWT, roleMiddleware("farmer"), deleteCrop);
 
 export default router;

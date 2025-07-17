@@ -4,17 +4,17 @@ import asyncHandler from "express-async-handler";
 import { Crop } from "../models/crop.model.js";
 
 export const addCrop = asyncHandler(async (req, res) => {
-  const { name, category, region, price, quantity, description } = req.body;
+  const { cropName, category, region, price, quantity, description } = req.body;
   const farmerId = req.user.id;
 
-  if (!name || !category || !region || !price || !quantity) {
+  if (!cropName || !category || !region || !price || !quantity) {
     throw new ApiError(400, "All fields are required");
   }
   if (price < 0 || quantity < 0) {
     throw new ApiError(400, "Price and quantity must be non-negative");
   }
 
-  const existingCrop = await Crop.findOne({ name, farmer: farmerId });
+  const existingCrop = await Crop.findOne({ cropName, farmer: farmerId });
   if (existingCrop) {
     throw new ApiError(
       400,
@@ -22,7 +22,7 @@ export const addCrop = asyncHandler(async (req, res) => {
     );
   }
   const newCrop = await Crop.create({
-    name,
+    cropName,
     category,
     region,
     price,
@@ -36,6 +36,8 @@ export const addCrop = asyncHandler(async (req, res) => {
   }
   res.status(201).json(new ApiResponse("Crop added successfully", newCrop));
 });
+
+
 
 export const getAllCrops = asyncHandler(async (req, res) => {
   const crops = await Crop.find({ status: "Active" })
@@ -166,21 +168,29 @@ export const deleteCrop = asyncHandler(async (req, res) => {
 });
 
 export const searchCrops = asyncHandler(async (req, res) => {
-  const { query } = req.query;
+  const { cropName, region, category, description, query } = req.query;
 
-  if (!query || query.trim().length === 0) {
-    throw new ApiError(400, "Search query is required");
-  }
+  // Build dynamic search criteria
+  const criteria = { status: "Active" };
+  const orArray = [];
 
-  const searchResults = await Crop.find({
-    status: "Active",
-    $or: [
-      { name: { $regex: query, $options: "i" } },
+  if (query && query.trim().length > 0) {
+    orArray.push(
+      { cropName: { $regex: query, $options: "i" } },
       { region: { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } },
       { category: { $regex: query, $options: "i" } },
-    ],
-  })
+      { description: { $regex: query, $options: "i" } }
+    );
+  }
+  if (cropName) criteria.cropName = { $regex: cropName, $options: "i" };
+  if (region) criteria.region = { $regex: region, $options: "i" };
+  if (category) criteria.category = { $regex: category, $options: "i" };
+  if (description) criteria.description = { $regex: description, $options: "i" };
+
+  // If query is present, use $or, else use criteria
+  const searchResults = await Crop.find(
+    orArray.length > 0 ? { status: "Active", $or: orArray } : criteria
+  )
     .populate("farmer", "name email region")
     .sort({ createdAt: -1 });
 
