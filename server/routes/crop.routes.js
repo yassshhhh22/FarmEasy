@@ -8,7 +8,7 @@ import {
   editCrop,
   deleteCrop,
   searchCrops,
-} from "../controllers/cropController.js";
+} from "../controllers/crop.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 import { roleMiddleware } from "../middleware/role.middleware.js";
 
