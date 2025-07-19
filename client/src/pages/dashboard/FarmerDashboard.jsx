@@ -3,6 +3,7 @@ import Topbar from "../../components/Topbar";
 import SalesStats from "../../components/SalesStats";
 import FlashDeals from "../../components/FlashDeals";
 import MarketInsight from "../../components/MarketInsight";
+import AddNewCrop from "./AddNewCrop";
 import { Plus, Package, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -12,7 +13,7 @@ const FarmerDashboard = () => {
       title: "Add New Crop",
       description: "List a new crop for sale",
       icon: Plus,
-      link: "/dashboard/add-crop",
+      link: "/dashboard/add-new-crop",
       color: "bg-green-500 hover:bg-green-600",
     },
     {

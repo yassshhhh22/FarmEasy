@@ -55,4 +55,5 @@ cropSchema.index({ farmer: 1, status: 1 });
 cropSchema.index({ category: 1, region: 1 });
 cropSchema.index({ isFlashDeal: 1 });
 
-export const Crop = mongoose.model('Crop', cropSchema);
+const Crop = mongoose.model('Crop', cropSchema);
+export default Crop;

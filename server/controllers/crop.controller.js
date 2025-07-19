@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
-import { Crop } from "../models/crop.model.js";
+import Crop  from "../models/crop.model.js";
 
 export const addCrop = asyncHandler(async (req, res) => {
   const { cropName, category, region, price, quantity, description } = req.body;
