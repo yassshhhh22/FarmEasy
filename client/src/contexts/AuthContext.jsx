@@ -6,143 +6,178 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Token validation function
-  const isTokenValid = (token) => {
-    if (!token) return false;
+  const clearError = () => setError(null);
 
+  const checkAuthStatus = async () => {
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const currentTime = Date.now() / 1000;
-      return payload.exp > currentTime;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Token refresh function
-  const refreshToken = async () => {
-    try {
+      setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+        `${import.meta.env.VITE_API_URL}/api/users/verify`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include httpOnly refresh token cookie
+          method: "GET",
+          credentials: "include", 
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setToken(data.accessToken);
-        setUser(data.user);
-        return true;
+        setUser(data.data.user);
+        setIsAuthenticated(true);
+        setError(null);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
-      return false;
     } catch (error) {
-      console.error("Token refresh failed:", error);
-      return false;
+      console.error("Auth verification failed:", error);
+      setUser(null);
+      setIsAuthenticated(false);
+      setError("Authentication verification failed");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Initial auth check on app start
   useEffect(() => {
-    // Check for existing session with backend on app start
-    const checkAuthStatus = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/auth/verify`,
-          {
-            method: "GET",
-            credentials: "include", // Include httpOnly cookies
-          }
-        );
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData.user);
-          setToken(userData.accessToken);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Auth verification failed:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     checkAuthStatus();
   }, []);
 
-  // Auto token refresh
-  useEffect(() => {
-    if (!token || !isAuthenticated) return;
-
-    const checkTokenExpiry = () => {
-      if (!isTokenValid(token)) {
-        refreshToken().then((success) => {
-          if (!success) {
-            logout();
-          }
-        });
-      }
-    };
-
-    // Check token every 5 minutes
-    const interval = setInterval(checkTokenExpiry, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [token, isAuthenticated]);
-
-  const login = (userData, authToken) => {
-    if (!userData.role) {
-      throw new Error("User data must include a role property.");
-    }
-
-    if (!isTokenValid(authToken)) {
-      throw new Error("Invalid or expired token.");
-    }
-
-    // Update state with access token
-    setUser(userData);
-    setToken(authToken);
-    setIsAuthenticated(true);
-  };
-
-  const logout = async () => {
+  // Login function
+  const login = async (credentials) => {
     try {
-      // Notify backend about logout
-      if (token) {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/users/logout`, {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/login`,
+        {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json", 
+          },
+          credentials: "include",
+          body: JSON.stringify(credentials),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.accessToken) {
+        document.cookie = `accessToken=${data.accessToken}; path=/; secure; sameSite=strict`;
+        const userWithType = {
+          ...data.data.user,
+          userType: credentials.userType,
+        };
+
+        setUser(userWithType);
+        setIsAuthenticated(true);
+        
+        return { success: true, user: userWithType };
+      } else {
+        setError(data.message || "Login failed");
+        return { success: false, error: data.message || "Login failed" };
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMessage = "Network error during login";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signup = async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/register`,
+        {
+          method: "POST",
+          headers: {
             "Content-Type": "application/json",
           },
-        });
+          credentials: "include",
+          body: JSON.stringify(userData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser(data.data.user);
+        setIsAuthenticated(true);
+        return { success: true, user: data.data.user };
+      } else {
+        setError(data.message || "Signup failed");
+        return { success: false, error: data.message || "Signup failed" };
       }
+    } catch (error) {
+      console.error("Signup error:", error);
+      const errorMessage = "Network error during signup";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout function
+  const logout = async () => {
+    try {
+      setLoading(true);
+
+      // Notify backend about logout (this clears httpOnly cookies)
+      await fetch(`${import.meta.env.VITE_API_URL}/api/users/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear state
+      // Always clear state regardless of backend response
       setUser(null);
-      setToken(null);
       setIsAuthenticated(false);
+      setError(null);
+      setLoading(false);
     }
   };
 
-  // Get current valid token
-  const getToken = async () => {
-    if (!token) return null;
+  // Refresh token function - for use by API interceptors
+  const refreshToken = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/refresh`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
 
-    if (isTokenValid(token)) {
-      return token;
+      if (response.ok) {
+        // Token refreshed successfully, user is still authenticated
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        // Refresh failed, user needs to login again
+        setUser(null);
+        setIsAuthenticated(false);
+        return false;
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      setUser(null);
+      setIsAuthenticated(false);
+      return false;
     }
-
-    // Try to refresh if expired
-    const refreshed = await refreshToken();
-    return refreshed ? token : null;
   };
 
   return (
@@ -151,11 +186,13 @@ export const AuthProvider = ({ children }) => {
         user,
         isAuthenticated,
         loading,
-        token,
+        error,
         login,
+        signup,
         logout,
-        getToken,
         refreshToken,
+        checkAuthStatus,
+        clearError,
       }}
     >
       {children}

@@ -4,11 +4,18 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
 export const verifyJWT = asynchandler(async (req, res, next) => {
+  // Debug logs
+  console.log("🍪 Raw cookies:", req.headers.cookie);
+  console.log("🍪 Parsed cookies:", req.cookies);
+  console.log("📋 Authorization header:", req.get("Authorization"));
+  console.log("🌐 Origin:", req.get("Origin"));
+  console.log("🔗 Referer:", req.get("Referer"));
+
   const token =
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
 
-  //   console.log("🔑 Received Token:", token); // Debugging log
+  console.log("🔑 Final token:", token ? "Token found" : "No token found");
 
   if (!token) {
     throw new ApiError(401, "Unauthorized request - No Token");

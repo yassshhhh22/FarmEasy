@@ -7,15 +7,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.json());
 
+app.use(cors({
+  origin: process.env.CORS_ORIGIN, 
+  credentials: true, // Essential for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 import userRoutes from "./routes/user.routes.js";
 app.use("/api/users", userRoutes);
 import cropRoutes from "./routes/crop.routes.js";

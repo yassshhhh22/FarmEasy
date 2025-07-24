@@ -87,17 +87,20 @@ const AddNewCrop = () => {
     setLoading(true);
     setError("");
     setSuccess("");
-
+    if (!isAuthenticated) {
+      setError("You must be logged in to add a crop");
+      setLoading(false);
+      return;
+    }
     try {
-      const token = localStorage.getItem("token");
-      
-      const apiUrl =  `${import.meta.env.VITE_API_URL}/api/crops/add`;
+
+      const apiUrl = `${import.meta.env.VITE_API_URL}/api/crops/add`;
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include", 
         body: JSON.stringify(formData),
       });
 
@@ -473,4 +476,3 @@ const AddNewCrop = () => {
 };
 
 export default AddNewCrop;
-                     

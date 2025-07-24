@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.userType)) {
     return <Navigate to="/" replace />;
   }
 
@@ -50,9 +50,9 @@ const DashboardRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role === "buyer") {
+  if (user.userType === "buyer") {
     return <Navigate to="/dashboard/buyer" replace />;
-  } else if (user.role === "farmer") {
+  } else if (user.userType === "farmer") {
     return <Navigate to="/dashboard/farmer" replace />;
   }
 

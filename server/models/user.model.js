@@ -34,12 +34,12 @@ const userSchema = new mongoose.Schema(
     userType: {
       type: String,
       required: true,
-      enum: ["farmer","admin", "buyer"],
+      enum: ["farmer", "admin", "buyer"],
       lowercase: true,
     },
     refreshToken: {
-    type: String,
-  },
+      type: String,
+    },
   },
   {
     timestamps: true,
@@ -63,8 +63,6 @@ userSchema.methods.generateAccessToken = function () {
     {
       id: this._id,
       email: this.email,
-      name: this.name,
-      phone: this.phone,
       userType: this.userType,
     },
     process.env.ACCESS_TOKEN_SECRET,

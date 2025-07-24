@@ -211,45 +211,27 @@ const LoginPage = () => {
     setError("");
 
     try {
-      // Direct API call to backend for authentication
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/users/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            userType,
-          }),
-        }
-      );
+      const result = await login({
+        email,
+        password,
+        userType,
+      });
 
-      if (response.ok) {
-        const userData = await response.json();
-        const actualUserType = userData.userType || userType;
-        localStorage.setItem("userType", actualUserType);
+      if (result.success) {
+        // Store userType in localStorage for persistence
+        localStorage.setItem("userType", userType);
 
-        // Update auth context
-        const authUserData = {
-          email: userData.email,
-          role: actualUserType,
-          uid: userData.uid || userData.id,
-          name: userData.name || userData.displayName,
-        };
-        login(authUserData);
-
-        // Navigate based on user type
-        if (actualUserType === "farmer") {
-          navigate("/dashboard/farmer");
-        } else {
-          navigate("/dashboard/buyer");
-        }
+        // Add a small delay to ensure state updates are completed
+        setTimeout(() => {
+          // Navigate based on userType from the form (not from API response)
+          if (userType === "farmer") {
+            navigate("/dashboard/farmer", { replace: true });
+          } else if (userType === "buyer") {
+            navigate("/dashboard/buyer", { replace: true });
+          }
+        }, 100);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Failed to sign in");
+        setError(result.error || "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -674,4 +656,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-                      
