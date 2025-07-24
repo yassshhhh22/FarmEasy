@@ -101,7 +101,7 @@ const Sidebar = () => {
       path: "/dashboard/crops",
       submenu: [
         { label: "Manage Listings", path: "/dashboard/manage-listings" },
-        { label: "Add New Crop", path: "/dashboard/add-crop" },
+        { label: "Add New Crop", path: "/dashboard/add-new-crop" },
         { label: "Crop Calendar", path: "/dashboard/crop-calendar" },
       ],
     },
@@ -114,7 +114,8 @@ const Sidebar = () => {
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
-  const menuItems = user?.role === "buyer" ? buyerMenuItems : farmerMenuItems;
+  const menuItems =
+    user?.userType === "buyer" ? buyerMenuItems : farmerMenuItems;
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (item) => {
@@ -243,10 +244,10 @@ const Sidebar = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                    AgroContract
+                    FarmEasy
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                    {user?.role || "User"} Dashboard
+                    {user?.userType || "User"} Dashboard
                   </p>
                 </div>
               </div>

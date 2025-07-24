@@ -34,7 +34,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax"
+      sameSite: "lax",
     };
 
     return res
@@ -45,7 +45,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
       })
       .cookie("refreshToken", refreshToken, {
         ...options,
-        maxAge: 30 * 24 * 60 * 60 * 1000, 
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       })
       .json(new ApiResponse(200, {}, "Access token refreshed successfully"));
   } catch (error) {
@@ -204,22 +204,14 @@ export const getProfile = asyncHandler(async (req, res) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, email, phone } = req.body;
+  const { name, phone, location, bio, company } = req.body;
 
   const updateData = {};
   if (name) updateData.name = name;
-  if (email) updateData.email = email;
   if (phone) updateData.phone = phone;
-  // Check if email is being updated and if it already exists
-  if (email) {
-    const existingUser = await User.findOne({
-      email,
-      _id: { $ne: req.user._id },
-    });
-    if (existingUser) {
-      throw new ApiError(409, "Email already exists");
-    }
-  }
+  if (location) updateData.location = location;
+  if (bio) updateData.bio = bio;
+  if (company) updateData.company = company;
 
   const updatedUser = await User.findByIdAndUpdate(req.user._id, updateData, {
     new: true,

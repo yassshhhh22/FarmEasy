@@ -37,6 +37,22 @@ const userSchema = new mongoose.Schema(
       enum: ["farmer", "admin", "buyer"],
       lowercase: true,
     },
+    // Add these new fields
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    company: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     refreshToken: {
       type: String,
     },

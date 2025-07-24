@@ -21,11 +21,13 @@ const router = Router();
 router.route("/register").post(createProfile);
 router.route("/login").post(loginuser);
 
-router.route("/refresh").post(refreshAccessToken); 
+router.route("/refresh").post(refreshAccessToken);
 router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/verify").get(verifyJWT, verifyToken); 
-router.route("/profile").get(verifyJWT, getProfile);
-router.route("/update-profile").patch(verifyJWT, updateProfile);
+router.route("/verify").get(verifyJWT, verifyToken);
+router
+  .route("/profile")
+  .get(verifyJWT, getProfile)
+  .patch(verifyJWT, updateProfile); // Make sure this line exists
 
 // Admin only routes
 router.route("/all").get(verifyJWT, roleMiddleware("admin"), getAllUsers);

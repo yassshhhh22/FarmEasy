@@ -19,6 +19,11 @@ import Search from "../pages/Search";
 import Profile from "../pages/Profile";
 import Cart from "../pages/Cart";
 
+// // Add missing imports for new pages
+// import ContractHistory from "../pages/dashboard/ContractHistory";
+// import ContractRequests from "../pages/dashboard/ContractRequests";
+// import CropCalendar from "../pages/dashboard/CropCalendar";
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
@@ -141,6 +146,25 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Add missing farmer routes */}
+      {/* <Route
+        path="/dashboard/crop-calendar"
+        element={
+          <ProtectedRoute allowedRoles={["farmer"]}>
+            <CropCalendar />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/contract-requests"
+        element={
+          <ProtectedRoute allowedRoles={["farmer"]}>
+            <ContractRequests />
+          </ProtectedRoute>
+        }
+      /> */}
+
       <Route
         path="/dashboard/sales-reports"
         element={
@@ -149,6 +173,25 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Add missing buyer routes */}
+      <Route
+        path="/dashboard/track-orders"
+        element={
+          <ProtectedRoute allowedRoles={["buyer"]}>
+            <TrackOrders />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* <Route
+        path="/dashboard/contract-history"
+        element={
+          <ProtectedRoute allowedRoles={["buyer"]}>
+            <ContractHistory />
+          </ProtectedRoute>
+        }
+      /> */}
 
       {/* Common Routes */}
       <Route
@@ -194,3 +237,4 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+      

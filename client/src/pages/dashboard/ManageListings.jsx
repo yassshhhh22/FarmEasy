@@ -1,12 +1,12 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; // Add this import
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
 import { Edit, Trash2, Eye, Plus, Search, Filter, Loader2 } from "lucide-react";
 
 const ManageListings = () => {
+  const { user, isAuthenticated } = useAuth(); // Add auth context
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [crops, setCrops] = useState([]);
@@ -16,20 +16,32 @@ const ManageListings = () => {
 
   // Fetch farmer's crops
   useEffect(() => {
-    fetchFarmerCrops();
-  }, []);
+    if (isAuthenticated && user?.userType === "farmer") {
+      fetchFarmerCrops();
+    } else if (!isAuthenticated) {
+      setError("Please log in to view your crops");
+      setLoading(false);
+    } else if (user?.userType !== "farmer") {
+      setError("Only farmers can view crop listings");
+      setLoading(false);
+    }
+  }, [isAuthenticated, user]);
 
   const fetchFarmerCrops = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/crops/my-crops", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      setError("");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/crops/my-crops`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Use cookies for authentication
+        }
+      );
 
       const data = await response.json();
 
@@ -37,8 +49,10 @@ const ManageListings = () => {
         throw new Error(data.message || "Failed to fetch crops");
       }
 
-      setCrops(data.data || []);
+      console.log("Fetched crops:", data); // Debug log
+      setCrops(data.data || data.crops || []); // Handle different response formats
     } catch (err) {
+      console.error("Error fetching crops:", err);
       setError(err.message);
       setCrops([]);
     } finally {
@@ -52,14 +66,16 @@ const ManageListings = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/crops/${cropId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/crops/${cropId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Use cookies for authentication
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -111,6 +127,52 @@ const ManageListings = () => {
                   Loading your listings...
                 </span>
               </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error if not logged in
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Sidebar />
+        <div className="flex-1">
+          <Topbar />
+          <main className="p-6">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔒</div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
+                Please log in to view your crop listings
+              </p>
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Go to Login
+              </button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if user is not a farmer
+  if (user?.userType !== "farmer") {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Sidebar />
+        <div className="flex-1">
+          <Topbar />
+          <main className="p-6">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">⚠️</div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
+                Only farmers can view crop listings
+              </p>
             </div>
           </main>
         </div>
