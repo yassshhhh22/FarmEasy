@@ -40,12 +40,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Initial auth check on app start
-  useEffect(() => {
+ useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, []); 
 
-  // Login function
+  
   const login = async (credentials) => {
     try {
       setLoading(true);

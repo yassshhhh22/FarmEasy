@@ -25,7 +25,7 @@ router.get("/my-contracts", getMyContracts);
 router.get("/pending", roleMiddleware("farmer"), getPendingContracts);
 
 // GET /api/contracts/active - View active contracts
-router.get("/active", getActiveContracts);
+router.get("/active",verifyJWT, getActiveContracts);
 
 // GET /api/contracts/:id - Get specific contract
 router.get("/:id", getContractById);

@@ -21,7 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import ThemeToggle from "../components/ThemeToggle"; // Import ThemeToggle component
+import ThemeToggle from "../components/ThemeToggle"; 
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -73,7 +73,6 @@ const Sidebar = () => {
       path: "/dashboard/contracts",
       submenu: [
         { label: "Active Contracts", path: "/dashboard/active-contracts" },
-        { label: "Pending Contracts", path: "/dashboard/pending-contracts" },
         { label: "Contract History", path: "/dashboard/contract-history" },
       ],
     },

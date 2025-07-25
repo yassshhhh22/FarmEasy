@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
 import FlashDeals from "../../components/FlashDeals";
@@ -7,6 +8,34 @@ import MarketInsight from "../../components/MarketInsight";
 import SpendingOverview from "../../components/SpendingOverview";
 
 const BuyerDashboard = () => {
+  const [crops, setCrops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadCrops = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/crops/all`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch crops");
+        }
+        const data = await response.json();
+        setCrops(data.data || data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load crops");
+        console.error("Error loading crops:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCrops();
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 ">
       <Sidebar />
@@ -53,7 +82,15 @@ const BuyerDashboard = () => {
                 View All
               </button>
             </div>
-            <CropGrid />
+            {loading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading crops...
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-500">{error}</div>
+            ) : (
+              <CropGrid crops={crops} />
+            )}
           </div>
         </main>
       </div>

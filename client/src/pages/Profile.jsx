@@ -110,7 +110,7 @@ const Profile = () => {
       setError("");
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/users/profile`, // Changed from /update-profile to /profile
+        `${import.meta.env.VITE_API_URL}/api/users/profile`,
         {
           method: "PATCH",
           headers: {
@@ -126,8 +126,6 @@ const Profile = () => {
           }),
         }
       );
-
-      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {

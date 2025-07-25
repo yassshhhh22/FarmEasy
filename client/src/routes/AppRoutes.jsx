@@ -1,7 +1,6 @@
 "use client";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-
 // Import pages
 import LandingPage from "../pages/LandingPage";
 import LoginPage from "../pages/LoginPage";
@@ -18,6 +17,7 @@ import Notifications from "../pages/Notifications";
 import Search from "../pages/Search";
 import Profile from "../pages/Profile";
 import Cart from "../pages/Cart";
+import CropDetails from "../pages/CropDetails";
 
 // // Add missing imports for new pages
 // import ContractHistory from "../pages/dashboard/ContractHistory";
@@ -193,6 +193,9 @@ const AppRoutes = () => {
         }
       /> */}
 
+      {/* Crop Details Route - Public */}
+      <Route path="/crop/:id" element={<CropDetails />} />
+
       {/* Common Routes */}
       <Route
         path="/notifications"
@@ -237,4 +240,3 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
-      
