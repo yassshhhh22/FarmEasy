@@ -15,5 +15,5 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: CORS_ORIGIN
-        value: https://your-frontend-domain.vercel.app
+        value: https://farmeasy22.vercel.app
     autoDeploy: false
