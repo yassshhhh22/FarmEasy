@@ -55,6 +55,13 @@ app.use("*", (req, res) => {
   });
 });
 
+app.use(/(.*)/, (req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
+
 // ✅ Updated listener for production
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is listening on port ${PORT}`);
