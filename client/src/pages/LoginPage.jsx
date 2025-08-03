@@ -193,7 +193,7 @@ const BuyerIllustration = () => {
 const LoginPage = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, checkAuthStatus } = useAuth();
   const [userType, setUserType] = useState("farmer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -218,18 +218,17 @@ const LoginPage = () => {
       });
 
       if (result.success) {
-        // Store userType in localStorage for persistence
         localStorage.setItem("userType", userType);
 
-        // Add a small delay to ensure state updates are completed
-        setTimeout(() => {
-          // Navigate based on userType from the form (not from API response)
-          if (userType === "farmer") {
-            navigate("/dashboard/farmer", { replace: true });
-          } else if (userType === "buyer") {
-            navigate("/dashboard/buyer", { replace: true });
-          }
-        }, 100);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        await checkAuthStatus();
+
+        if (userType === "farmer") {
+          navigate("/dashboard/farmer", { replace: true });
+        } else if (userType === "buyer") {
+          navigate("/dashboard/buyer", { replace: true });
+        }
       } else {
         setError(result.error || "Login failed");
       }
@@ -656,3 +655,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+                   

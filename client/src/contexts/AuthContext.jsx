@@ -64,8 +64,10 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      if (response.ok && data.accessToken) {
+      if (response.ok) {
+        if (data.accessToken) {
         document.cookie = `accessToken=${data.accessToken}; path=/; secure; sameSite=strict`;
+        }
         const userWithType = {
           ...data.data.user,
           userType: credentials.userType,
