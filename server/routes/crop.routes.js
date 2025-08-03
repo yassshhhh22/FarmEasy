@@ -21,12 +21,7 @@ router.post("/add", verifyJWT, roleMiddleware("farmer"), addCrop);
 router.get("/all", getAllCrops);
 
 // GET /api/crops/my-crops - Get logged-in farmer's own crop listings (Farmer only)
-router.get(
-  "/my-crops",
-  verifyJWT,
-  roleMiddleware("farmer"),
-  getFarmerCrops
-);
+router.get("/my-crops", verifyJWT, roleMiddleware("farmer"), getFarmerCrops);
 
 // GET /api/crops/flash-deals - Get crops flagged as flash deals (Public)
 router.get("/flash-deals", getFlashDeals);
@@ -34,8 +29,8 @@ router.get("/flash-deals", getFlashDeals);
 // GET /api/crops/search - Search crops by name, category, region, etc. (Public)
 router.get("/search", searchCrops);
 
-// GET /api/crops/crop/:id - Get specific crop details by crop ID (Public)
-router.get("/crop/:id", getCropById);
+// GET /api/crops/:id - Get specific crop details by crop ID (Public)
+router.get("/:id", getCropById);
 
 // PATCH /api/crops/edit/:id - Farmer updates a crop listing (Farmer only)
 router.patch("/edit/:id", verifyJWT, roleMiddleware("farmer"), editCrop);

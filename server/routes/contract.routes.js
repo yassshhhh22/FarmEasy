@@ -27,7 +27,7 @@ router.get("/pending", roleMiddleware("farmer"), getPendingContracts);
 // GET /api/contracts/active - View active contracts
 router.get("/active", getActiveContracts);
 
-// GET /api/contracts/:id - Get specific contract
+// GET /api/contracts/:id - Get specific contract (MUST come after specific routes)
 router.get("/:id", getContractById);
 
 // PATCH /api/contracts/update-status/:id - Farmer updates status

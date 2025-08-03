@@ -27,17 +27,19 @@ router.route("/verify").get(verifyJWT, verifyToken);
 router
   .route("/profile")
   .get(verifyJWT, getProfile)
-  .patch(verifyJWT, updateProfile); // Make sure this line exists
+  .patch(verifyJWT, updateProfile);
 
-// Admin only routes
+// Admin only routes - specific routes first
 router.route("/all").get(verifyJWT, roleMiddleware("admin"), getAllUsers);
+router.route("/buyers").get(verifyJWT, roleMiddleware("admin"), getBuyers);
+router.route("/farmers").get(verifyJWT, roleMiddleware("admin"), getFarmers);
+
+// Parameterized routes last
 router
   .route("/change-role/:id")
   .patch(verifyJWT, roleMiddleware("admin"), changeUserRole);
 router
   .route("/delete/:id")
   .delete(verifyJWT, roleMiddleware("admin"), deleteUser);
-router.route("/buyers").get(verifyJWT, roleMiddleware("admin"), getBuyers);
-router.route("/farmers").get(verifyJWT, roleMiddleware("admin"), getFarmers);
 
 export default router;
