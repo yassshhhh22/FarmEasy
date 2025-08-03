@@ -25,12 +25,16 @@ router.get("/my-contracts", getMyContracts);
 router.get("/pending", roleMiddleware("farmer"), getPendingContracts);
 
 // GET /api/contracts/active - View active contracts
-router.get("/active",verifyJWT, getActiveContracts);
+router.get("/active", getActiveContracts);
 
 // GET /api/contracts/:id - Get specific contract
 router.get("/:id", getContractById);
 
 // PATCH /api/contracts/update-status/:id - Farmer updates status
-router.patch("/update-status/:id", roleMiddleware("farmer"), updateContractStatus);
+router.patch(
+  "/update-status/:id",
+  roleMiddleware("farmer"),
+  updateContractStatus
+);
 
 export default router;
