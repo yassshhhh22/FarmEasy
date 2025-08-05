@@ -13,11 +13,25 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
+
+      // Get token from localStorage for production fallback
+      const token = localStorage.getItem("accessToken");
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      // Add Authorization header if token exists
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/users/verify`,
         {
           method: "GET",
-          credentials: "include", 
+          headers,
+          credentials: "include",
         }
       );
 
@@ -27,11 +41,16 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         setError(null);
       } else {
+        // Clear tokens if verification fails
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setUser(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
       console.error("Auth verification failed:", error);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
       setUser(null);
       setIsAuthenticated(false);
       setError("Authentication verification failed");
@@ -39,12 +58,10 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
- useEffect(() => {
+  useEffect(() => {
     checkAuthStatus();
-  }, []); 
+  }, []);
 
-  
   const login = async (credentials) => {
     try {
       setLoading(true);
@@ -55,7 +72,7 @@ export const AuthProvider = ({ children }) => {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json", 
+            "Content-Type": "application/json",
           },
           credentials: "include",
           body: JSON.stringify(credentials),
@@ -65,9 +82,14 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.accessToken) {
-        document.cookie = `accessToken=${data.accessToken}; path=/; secure; sameSite=strict`;
+        // if (data.accessToken) {
+        // document.cookie = `accessToken=${data.accessToken}; path=/; secure; sameSite=strict`;
+        // }
+        if (data.data.accessToken) {
+          localStorage.setItem("accessToken", data.data.accessToken);
+          localStorage.setItem("refreshToken", data.data.refreshToken);
         }
+
         const userWithType = {
           ...data.data.user,
           userType: credentials.userType,
@@ -75,7 +97,7 @@ export const AuthProvider = ({ children }) => {
 
         setUser(userWithType);
         setIsAuthenticated(true);
-        
+
         return { success: true, user: userWithType };
       } else {
         setError(data.message || "Login failed");
@@ -137,10 +159,17 @@ export const AuthProvider = ({ children }) => {
       await fetch(`${import.meta.env.VITE_API_URL}/api/users/logout`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+        },
       });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // Clear localStorage tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+
       // Always clear state regardless of backend response
       setUser(null);
       setIsAuthenticated(false);
