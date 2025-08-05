@@ -314,8 +314,7 @@ For questions or support, please contact:
 
 - **Email:** support@farmeasy.com
 - **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/FarmEasy/issues)
-- **Documentation:** [Wiki](https://github.com/yassshhhh22/FarmEasy/wiki)
-- **Discord:** [Join our community](https://discord.gg/farmeasy)
+- **Documentation:** [Wiki](https://github.com/yassshhhh22/FarmEasy/wiki)\
 
 ## 🙏 Acknowledgments
 
