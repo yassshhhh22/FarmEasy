@@ -16,15 +16,12 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? process.env.CORS_ORIGIN
-        : [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            process.env.CORS_ORIGIN,
-          ],
+        ? ["https://farmeasy22.vercel.app", process.env.CORS_ORIGIN]
+        : ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
   })
 );
 
