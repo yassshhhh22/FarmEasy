@@ -42,21 +42,11 @@ FarmEasy/
 ### Core Features
 
 - [x] User authentication (Farmers & Buyers)
-- [ ] Contract creation and management
-- [ ] Product catalog with pricing
+- [x] Contract creation and management
+- [x] Product catalog with pricing
 - [ ] Order tracking and fulfillment
 - [ ] Payment integration
 - [ ] Document management (contracts, certificates)
-
-### Advanced Features
-
-- [ ] Real-time notifications
-- [ ] GPS-based farm location tracking
-- [ ] Weather integration
-- [ ] Crop monitoring dashboard
-- [ ] Multi-language support
-- [ ] Rating and review system
-- [ ] Analytics and reporting
 
 ### User Roles
 
@@ -99,8 +89,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 **Client (.env):**
 
 ```env
-REACT_APP_API_URL=http://localhost:5000/api
-REACT_APP_SOCKET_URL=http://localhost:5000
+VITE_API_URL=http://localhost:5000
 ```
 
 ### 3. Install Dependencies
@@ -112,10 +101,6 @@ npm install
 
 # Client
 cd ../client
-npm install
-
-# Mobile (optional)
-cd ../mobile
 npm install
 ```
 
@@ -131,57 +116,48 @@ npm run dev
 
 # In another terminal (client)
 cd ../client
-npm start
-
-# Mobile (optional)
-cd ../mobile
-npx react-native run-android
-# or
-npx react-native run-ios
+npm run dev
 ```
 
 ## 📱 API Endpoints
 
-### Authentication
+### Authentication & Users
 
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/refresh` - Refresh JWT token
-- `GET /api/auth/profile` - Get user profile
+- `POST /api/users/register` - User registration
+- `POST /api/users/login` - User login
+- `POST /api/users/logout` - User logout
+- `POST /api/users/refresh` - Refresh JWT token
+- `GET /api/users/verify` - Verify JWT token
+- `GET /api/users/profile` - Get user profile
+- `PATCH /api/users/profile` - Update user profile
 
-### Users
+### Admin-only User Management
 
-- `GET /api/users` - Get all users (admin only)
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user profile
-- `DELETE /api/users/:id` - Delete user account
+- `GET /api/users/all` - Get all users (admin only)
+- `GET /api/users/buyers` - Get all buyers (admin only)
+- `GET /api/users/farmers` - Get all farmers (admin only)
+- `PATCH /api/users/change-role/:id` - Change user role (admin only)
+- `DELETE /api/users/delete/:id` - Delete user (admin only)
+
+### Crops/Products
+
+- `POST /api/crops/add` - Add new crop listing (farmer only)
+- `GET /api/crops/all` - Get all active crops
+- `GET /api/crops/my-crops` - Get farmer's own crops (farmer only)
+- `GET /api/crops/flash-deals` - Get flash deal crops
+- `GET /api/crops/search` - Search crops by various criteria
+- `GET /api/crops/:id` - Get specific crop details
+- `PATCH /api/crops/edit/:id` - Update crop listing (farmer only)
+- `DELETE /api/crops/delete/:id` - Delete crop listing (farmer only)
 
 ### Contracts
 
-- `GET /api/contracts` - Get all contracts
-- `GET /api/contracts/:id` - Get contract by ID
-- `POST /api/contracts` - Create new contract
-- `PUT /api/contracts/:id` - Update contract
-- `DELETE /api/contracts/:id` - Delete contract
-- `PUT /api/contracts/:id/status` - Update contract status
-
-### Products
-
-- `GET /api/products` - Get all products
-- `GET /api/products/:id` - Get product by ID
-- `POST /api/products` - Add new product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
-- `GET /api/products/category/:category` - Get products by category
-
-### Orders
-
-- `GET /api/orders` - Get all orders
-- `GET /api/orders/:id` - Get order by ID
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/:id` - Update order
-- `PUT /api/orders/:id/status` - Update order status
+- `POST /api/contracts/create` - Create new contract (buyer only)
+- `GET /api/contracts/my-contracts` - Get user's contracts
+- `GET /api/contracts/pending` - Get pending contracts (farmer only)
+- `GET /api/contracts/active` - Get active contracts
+- `GET /api/contracts/:id` - Get specific contract details
+- `PATCH /api/contracts/update-status/:id` - Update contract status (farmer only)
 
 ## 🗄️ Database Schema
 
@@ -192,33 +168,32 @@ npx react-native run-ios
   name: String,
   email: String,
   password: String,
-  role: ["farmer", "buyer", "admin"],
-  profile: {
-    phone: String,
-    address: Object,
-    farmSize: Number, // for farmers
-    crops: [String]   // for farmers
-  },
-  verified: Boolean,
-  createdAt: Date
+  phone: String,
+  userType: ["farmer", "buyer", "admin"],
+  location: String,
+  bio: String,
+  company: String,
+  refreshToken: String,
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
-### Product Model
+### Crop Model
 
 ```javascript
 {
-  name: String,
+  cropName: String,
   category: String,
-  description: String,
+  region: String,
   price: Number,
-  unit: String,
   quantity: Number,
+  description: String,
   farmer: ObjectId,
-  images: [String],
-  location: Object,
-  harvestDate: Date,
-  createdAt: Date
+  status: ["Active", "Sold", "Expired"],
+  isFlashDeal: Boolean,
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -226,17 +201,16 @@ npx react-native run-ios
 
 ```javascript
 {
-  farmer: ObjectId,
+  crop: ObjectId,
   buyer: ObjectId,
-  product: ObjectId,
-  quantity: Number,
-  pricePerUnit: Number,
-  totalAmount: Number,
-  deliveryDate: Date,
-  status: ["pending", "accepted", "in_progress", "completed", "cancelled"],
+  farmer: ObjectId,
   terms: String,
-  documents: [String],
-  createdAt: Date
+  quantity: Number,
+  price: Number,
+  deliveryDate: Date,
+  status: ["Pending", "Accepted", "Rejected", "Completed"],
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -348,6 +322,23 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 For questions or support, please contact:
 
 - **Email:** support@farmeasy.com
+- **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/Contract-Farming/issues)
+- **Documentation:** [Wiki](https://github.com/yassshhhh22/Contract-Farming/wiki)
+- **Discord:** [Join our community](https://discord.gg/farmeasy)
+
+## 🙏 Acknowledgments
+
+- Thanks to all contributors who have helped shape this project
+- Special thanks to the agricultural community for their insights
+- Built with ❤️ for farmers and buyers worldwide
+
+---
+
+**Note:** This project is actively under development. Features and documentation will be updated regularly. Star ⭐ the repository to stay updated!
+
+**Version:** 1.0.0-beta  
+**Last Updated:** January 2025
+
 - **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/Contract-Farming/issues)
 - **Documentation:** [Wiki](https://github.com/yassshhhh22/Contract-Farming/wiki)
 - **Discord:** [Join our community](https://discord.gg/farmeasy)
