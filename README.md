@@ -8,8 +8,6 @@ FarmEasy is a comprehensive platform designed to connect farmers with buyers, en
 FarmEasy/
 ├── server/        # Node.js + Express server
 ├── client/        # React client application
-├── mobile/        # React Native mobile app
-└── docs/          # Documentation and API specs
 ```
 
 ## 🚀 Tech Stack
@@ -29,13 +27,7 @@ FarmEasy/
 - MongoDB with Mongoose
 - JWT Authentication
 - Multer (file uploads)
-- Socket.IO (real-time features)
 
-**Mobile (Optional):**
-
-- React Native
-- NativeWind
-- React Navigation
 
 ## 🧪 Features (Planned)
 
@@ -60,7 +52,7 @@ FarmEasy/
 
 - Node.js (v14 or higher)
 - MongoDB (local or cloud)
-- npm or yarn package manager
+- npm 
 - Git
 
 ### 1. Clone the Repository
