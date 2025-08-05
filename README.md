@@ -28,7 +28,6 @@ FarmEasy/
 - JWT Authentication
 - Multer (file uploads)
 
-
 ## 🧪 Features (Planned)
 
 ### Core Features
@@ -52,14 +51,14 @@ FarmEasy/
 
 - Node.js (v14 or higher)
 - MongoDB (local or cloud)
-- npm 
+- npm
 - Git
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yassshhhh22/Contract-Farming.git
-cd Contract-Farming
+git clone https://github.com/yassshhhh22/FarmEasy.git
+cd FarmEasy
 ```
 
 ### 2. Setup Environment Variables
@@ -314,25 +313,8 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 For questions or support, please contact:
 
 - **Email:** support@farmeasy.com
-- **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/Contract-Farming/issues)
-- **Documentation:** [Wiki](https://github.com/yassshhhh22/Contract-Farming/wiki)
-- **Discord:** [Join our community](https://discord.gg/farmeasy)
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors who have helped shape this project
-- Special thanks to the agricultural community for their insights
-- Built with ❤️ for farmers and buyers worldwide
-
----
-
-**Note:** This project is actively under development. Features and documentation will be updated regularly. Star ⭐ the repository to stay updated!
-
-**Version:** 1.0.0-beta  
-**Last Updated:** January 2025
-
-- **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/Contract-Farming/issues)
-- **Documentation:** [Wiki](https://github.com/yassshhhh22/Contract-Farming/wiki)
+- **GitHub Issues:** [Create an issue](https://github.com/yassshhhh22/FarmEasy/issues)
+- **Documentation:** [Wiki](https://github.com/yassshhhh22/FarmEasy/wiki)
 - **Discord:** [Join our community](https://discord.gg/farmeasy)
 
 ## 🙏 Acknowledgments
