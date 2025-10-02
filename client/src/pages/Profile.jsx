@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
+import React, { useEffect, useState } from "react";
 import {
   User,
   Mail,
@@ -13,7 +11,11 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+
 import { useAuth } from "../contexts/AuthContext";
+import { api } from "../lib/api";
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -30,130 +32,71 @@ const Profile = () => {
     joinDate: "",
   });
 
-  // Fetch profile data when component mounts
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
       setError("");
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/users/profile`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch profile");
+      const res = await api("/api/users/profile");
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Failed to fetch profile");
       }
-
-      // Update formData with fetched data, provide fallbacks for missing fields
-      const profileData = data.data;
+      const d = await res.json();
+      const u = d.user || d.data?.user || d.data || d;
       setFormData({
-        name: profileData.name || "User",
-        email: profileData.email || "",
-        phone: profileData.phone || "",
-        location: profileData.location || "",
-        bio:
-          profileData.bio ||
-          (profileData.userType === "farmer"
-            ? "Organic farmer with experience in sustainable agriculture."
-            : "Procurement manager for fresh produce distribution."),
-        company:
-          profileData.company ||
-          (profileData.userType === "farmer" ? "Farm Business" : "Company"),
-        joinDate: profileData.createdAt || new Date().toISOString(),
+        name: u.name || "",
+        email: u.email || "",
+        phone: u.phone || "",
+        location: u.location || "",
+        bio: u.bio || "",
+        company: u.company || "",
+        joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "",
       });
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-      setError(err.message);
-      // Fallback to user data from context if available
-      if (user) {
-        setFormData({
-          name: user.name || "User",
-          email: user.email || "",
-          phone: user.phone || "",
-          location: "",
-          bio:
-            user.userType === "farmer"
-              ? "Organic farmer with experience in sustainable agriculture."
-              : "Procurement manager for fresh produce distribution.",
-          company: user.userType === "farmer" ? "Farm Business" : "Company",
-          joinDate: user.createdAt || new Date().toISOString(),
-        });
-      }
+    } catch (e) {
+      setError(e.message || "Failed to fetch profile");
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((s) => ({ ...s, [name]: value }));
   };
 
   const handleSave = async () => {
     try {
       setLoading(true);
       setError("");
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/users/profile`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            name: formData.name,
-            phone: formData.phone,
-            location: formData.location,
-            bio: formData.bio,
-            company: formData.company,
-          }),
-        }
-      );
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || `HTTP error! status: ${response.status}`
-          );
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      const res = await api("/api/users/profile", {
+        method: "PATCH",
+        body: {
+          name: formData.name,
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          company: formData.company,
+        },
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Failed to update profile");
       }
-
-      const data = await response.json();
-      setIsEditing(false);
-
-      // Refresh the profile data to show updated information
       await fetchProfile();
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      setError(err.message || "Failed to update profile");
+      setIsEditing(false);
+    } catch (e) {
+      setError(e.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset form data by refetching
-    fetchProfile();
     setIsEditing(false);
   };
 
@@ -261,18 +204,6 @@ const Profile = () => {
                     <span className="text-2xl font-bold text-white">
                       {formData.name.charAt(0)}
                     </span>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formData.name}
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400 capitalize">
-                      {user?.userType}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Member since{" "}
-                      {new Date(formData.joinDate).toLocaleDateString()}
-                    </p>
                   </div>
                 </div>
 

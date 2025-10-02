@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api"; // add this
 import { useAuth } from "../../contexts/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
@@ -47,22 +48,12 @@ const ManageListings = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/crops/my-crops`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Use cookies for authentication
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
+      const res = await api("/api/crops/my-crops"); // use api wrapper
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         throw new Error(data.message || "Failed to fetch crops");
       }
+      const data = await res.json();
 
       console.log("Fetched crops:", data); // Debug log
       setCrops(data.data || data.crops || []); // Handle different response formats
@@ -79,19 +70,11 @@ const ManageListings = () => {
     setDeleteLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/crops/delete/${cropId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
+      const res = await api(`/api/crops/delete/${cropId}`, {
+        method: "DELETE",
+      }); // use api wrapper
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         throw new Error(data.message || "Failed to delete crop");
       }
 

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
-
+import { api } from "../lib/api";
 
 const FarmerIllustration = () => {
   const [animate, setAnimate] = useState(false);
@@ -217,27 +217,22 @@ const SignupPage = () => {
     setError("");
 
     try {
-      const userData = {
-        name: formData.name,
-        phone: formData.phone,
-        userType: userType,
-      };
-
-      // Simulate API call for signup
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+      const res = await api("/api/users/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
           password: formData.password,
           userType: userType,
-        }),
+        },
       });
-      // Navigate to appropriate dashboard
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Signup failed");
+      }
+
       if (userType === "farmer") {
         navigate("/dashboard/farmer");
       } else {
@@ -245,23 +240,7 @@ const SignupPage = () => {
       }
     } catch (error) {
       console.error("Signup error:", error);
-      let errorMessage = "Failed to create account";
-
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          errorMessage = "An account with this email already exists";
-          break;
-        case "auth/weak-password":
-          errorMessage = "Password should be at least 6 characters";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "Invalid email address";
-          break;
-        default:
-          errorMessage = error.message || "Failed to create account";
-      }
-
-      setError(errorMessage);
+      setError(error.message || "Signup failed");
     } finally {
       setIsLoading(false);
     }

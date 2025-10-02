@@ -211,30 +211,19 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const result = await login({
-        email,
-        password,
-        userType,
-      });
+      await login({ email, password, userType }); // AuthContext throws on failure
+      localStorage.setItem("userType", userType);
 
-      if (result.success) {
-        localStorage.setItem("userType", userType);
-
-        // await new Promise((resolve) => setTimeout(resolve, 500));
-
-        await checkAuthStatus();
-
-        if (userType === "farmer") {
-          navigate("/dashboard/farmer", { replace: true });
-        } else if (userType === "buyer") {
-          navigate("/dashboard/buyer", { replace: true });
-        }
+      if (userType === "farmer") {
+        navigate("/dashboard/farmer", { replace: true });
+      } else if (userType === "buyer") {
+        navigate("/dashboard/buyer", { replace: true });
       } else {
-        setError(result.error || "Login failed");
+        navigate("/", { replace: true });
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("Network error. Please try again.");
+      setError("Invalid email/password or user type");
     } finally {
       setIsLoading(false);
     }
@@ -655,4 +644,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-                   

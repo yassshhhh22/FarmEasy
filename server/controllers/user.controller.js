@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
+import { getCookieOptions } from "../utils/cookieOptions.js";
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies.refreshToken;
@@ -31,11 +32,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
       user._id
     );
 
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    };
+    const options = getCookieOptions();
 
     return res
       .status(200)
@@ -45,7 +42,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
       })
       .cookie("refreshToken", refreshToken, {
         ...options,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .json(new ApiResponse(200, {}, "Access token refreshed successfully"));
   } catch (error) {
@@ -105,47 +102,51 @@ export const loginuser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ email, userType });
-  if (!user || !(await user.comparePassword(password))) {
-    throw new ApiError(401, "Invalid email, password, or user type");
+  if (!user) {
+    throw new ApiError(401, "Invalid credentials");
   }
 
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch || user.userType !== userType) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
-  // Updated cookie options for cross-origin requests
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // true in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" for cross-origin
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  };
-
-  const refreshCookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  };
+  const options = getCookieOptions();
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .cookie("accessToken", accessToken, {
+      ...options,
+      maxAge: 24 * 60 * 60 * 1000,
+    })
+    .cookie("refreshToken", refreshToken, {
+      ...options,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
     .json(
       new ApiResponse(
         200,
         {
-          user: loggedInUser,
-          accessToken, // Include in response for localStorage fallback
-          refreshToken,
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            userType: user.userType,
+            location: user.location,
+            bio: user.bio,
+            company: user.company,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          },
         },
-        "User logged in successfully"
+        "Logged in successfully"
       )
     );
 });
@@ -163,17 +164,12 @@ export const logoutUser = asyncHandler(async (req, res) => {
     }
   );
 
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  };
-
+  const options = getCookieOptions();
+  res.clearCookie("accessToken", options);
+  res.clearCookie("refreshToken", options);
   return res
     .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged out successfully"));
+    .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
 const generateAccessAndRefreshTokens = async (userId) => {

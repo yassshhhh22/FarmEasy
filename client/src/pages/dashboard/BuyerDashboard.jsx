@@ -6,6 +6,7 @@ import CropGrid from "../../components/CropCard";
 import ContractSummaryCard from "../../components/ContractSummaryCard";
 import MarketInsight from "../../components/MarketInsight";
 import SpendingOverview from "../../components/SpendingOverview";
+import { api } from "../../lib/api"; // add this
 
 const BuyerDashboard = () => {
   const [crops, setCrops] = useState([]);
@@ -16,13 +17,11 @@ const BuyerDashboard = () => {
     const loadCrops = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/crops/all`
-        );
-        if (!response.ok) {
+        const res = await api("/api/crops/all"); // use api wrapper
+        if (!res.ok) {
           throw new Error("Failed to fetch crops");
         }
-        const data = await response.json();
+        const data = await res.json();
         setCrops(data.data || data);
         setError(null);
       } catch (err) {

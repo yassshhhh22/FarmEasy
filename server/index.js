@@ -1,13 +1,24 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000; // ✅ Add fallback port for local development
 
+// Ensure proxy trust in prod for correct cookie behavior behind proxies
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 

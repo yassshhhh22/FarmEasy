@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Clock, Star } from "lucide-react";
+import { api } from "../lib/api"; // add this
 
 const FlashDeals = () => {
   const [deals, setDeals] = useState([]);
@@ -10,13 +11,11 @@ const FlashDeals = () => {
     const loadFlashDeals = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/crops/flash-deals`
-        );
-        if (!response.ok) {
+        const res = await api("/api/crops/flash-deals"); // use api wrapper
+        if (!res.ok) {
           throw new Error("Failed to fetch flash deals");
         }
-        const data = await response.json();
+        const data = await res.json();
         setDeals(data.data || data);
         setError(null);
       } catch (err) {
