@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../lib/api"; // add
+import { api } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
@@ -14,13 +14,14 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import Pagination from "../../components/Pagination";
 
 const ManageListings = () => {
-  const { user, isAuthenticated } = useAuth();
+  // Rename auth loading and add a local list loading state
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // was: loading
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [crops, setCrops] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -28,38 +29,63 @@ const ManageListings = () => {
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [listLoading, setListLoading] = useState(true); // add this
   const navigate = useNavigate();
 
-  // Fetch farmer's crops
+  // Fetch farmer's crops after auth is resolved
   useEffect(() => {
-    if (isAuthenticated && user?.userType === "farmer") {
-      fetchFarmerCrops();
-    } else if (!isAuthenticated) {
+    const auth =
+      typeof isAuthenticated === "boolean" ? isAuthenticated : !!user;
+
+    if (authLoading) return; // was: if (loading) return;
+
+    if (auth && user?.userType === "farmer") {
+      fetchFarmerCrops(page, limit);
+    } else if (!auth) {
       setError("Please log in to view your crops");
-      setLoading(false);
+      setListLoading(false); // was: setLoading(false)
     } else if (user?.userType !== "farmer") {
       setError("Only farmers can view crop listings");
-      setLoading(false);
+      setListLoading(false); // was: setLoading(false)
     }
-  }, [isAuthenticated, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, user, page, limit]); // was: [loading, ...]
 
-  const fetchFarmerCrops = async () => {
+  const fetchFarmerCrops = async (p = page, l = limit) => {
     try {
-      setLoading(true);
+      setListLoading(true); // was: setLoading(true)
       setError("");
-      const res = await api("/api/crops/my-crops");
+      const res = await api(
+        `/api/crops/my-crops?page=${p}&limit=${l}&sort=-createdAt`
+      );
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message || "Failed to fetch crops");
       }
       const d = await res.json();
-      setCrops(d.data || d);
+      const data = d.data || d;
+
+      const items =
+        data.items || data.crops || (Array.isArray(data) ? data : []);
+      setCrops(items);
+      setTotal(data.total ?? (Array.isArray(data) ? data.length : 0));
     } catch (e) {
       setError(e.message || "Failed to fetch crops");
+      setCrops([]);
+      setTotal(0);
     } finally {
-      setLoading(false);
+      setListLoading(false); // was: setLoading(false)
     }
   };
+
+  // Trigger fetch on page/limit changes (adds on top)
+  useEffect(() => {
+    fetchFarmerCrops(page, limit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit]);
 
   const handleDeleteCrop = async (cropId) => {
     setDeleteLoading(true);
@@ -99,46 +125,39 @@ const ManageListings = () => {
     setEditLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/crops/edit/${selectedCrop._id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            cropName: selectedCrop.cropName,
-            price: selectedCrop.price,
-            quantity: selectedCrop.quantity,
-            category: selectedCrop.category,
-            region: selectedCrop.region,
-            description: selectedCrop.description,
-            status: selectedCrop.status,
-            isFlashDeal: selectedCrop.isFlashDeal,
-          }),
-        }
-      );
+      const res = await api(`/api/crops/edit/${selectedCrop._id}`, {
+        method: "PATCH",
+        body: {
+          cropName: selectedCrop.cropName,
+          price: selectedCrop.price,
+          quantity: selectedCrop.quantity,
+          category: selectedCrop.category,
+          region: selectedCrop.region,
+          description: selectedCrop.description,
+          status: selectedCrop.status,
+          isFlashDeal: !!selectedCrop.isFlashDeal,
+        },
+      });
 
-      const data = await response.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (!res.ok) {
+        if (res.status === 403)
+          throw new Error("You can only edit your own crops");
         throw new Error(data.message || "Failed to update crop");
       }
 
-      // Update the crop in the local state
-      setCrops(
-        crops.map((crop) =>
-          crop._id === selectedCrop._id ? data.data || data.crop : crop
+      // Update item in local list so UI reflects immediately
+      setCrops((prev) =>
+        prev.map((c) =>
+          c._id === (data.data?._id || selectedCrop._id) ? data.data || data : c
         )
       );
 
       setShowEditModal(false);
       setSelectedCrop(null);
-      // Removed alert - will add toast later
     } catch (err) {
-      console.error("Error updating crop:", err.message);
-      // Removed alert - will add toast later
+      setError(err.message || "Failed to update crop");
     } finally {
       setEditLoading(false);
     }
@@ -174,7 +193,8 @@ const ManageListings = () => {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  // Loading UI should respect both authLoading and listLoading
+  if (authLoading || listLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
         <Sidebar />
@@ -429,31 +449,57 @@ const ManageListings = () => {
               </div>
             </div>
 
-            {filteredListings.length === 0 && !loading && (
-              <div className="text-center py-12">
-                {crops.length === 0 ? (
-                  <div className="space-y-4">
-                    <div className="text-6xl">🌱</div>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">
-                      No crop listings yet
+            {filteredListings.length === 0 &&
+              !listLoading && ( // was: !loading
+                <div className="text-center py-12">
+                  {crops.length === 0 ? (
+                    <div className="space-y-4">
+                      <div className="text-6xl">🌱</div>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">
+                        No crop listings yet
+                      </p>
+                      <p className="text-gray-400 dark:text-gray-500">
+                        Start by adding your first crop listing
+                      </p>
+                      <button
+                        onClick={() => navigate("/dashboard/add-new-crop")}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
+                      >
+                        Add Your First Crop
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No listings found matching your criteria.
                     </p>
-                    <p className="text-gray-400 dark:text-gray-500">
-                      Start by adding your first crop listing
-                    </p>
-                    <button
-                      onClick={() => navigate("/dashboard/add-new-crop")}
-                      className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
-                    >
-                      Add Your First Crop
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No listings found matching your criteria.
-                  </p>
-                )}
+                  )}
+                </div>
+              )}
+
+            <div className="space-y-4">
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-end gap-3">
+                <label className="text-sm text-gray-600">Page size</label>
+                <select
+                  className="border rounded px-2 py-1"
+                  value={limit}
+                  onChange={(e) => {
+                    setPage(1);
+                    setLimit(Number(e.target.value));
+                  }}
+                >
+                  <option value={6}>6</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
               </div>
-            )}
+              <Pagination
+                page={page}
+                limit={limit}
+                total={total}
+                onPageChange={(n) => setPage(n)}
+              />
+            </div>
           </main>
         </div>
 

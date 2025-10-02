@@ -7,7 +7,6 @@ import {
   getCropById,
   editCrop,
   deleteCrop,
-  searchCrops,
 } from "../controllers/crop.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 import { roleMiddleware } from "../middleware/role.middleware.js";
@@ -27,7 +26,7 @@ router.get("/my-crops", verifyJWT, roleMiddleware("farmer"), getFarmerCrops);
 router.get("/flash-deals", getFlashDeals);
 
 // GET /api/crops/search - Search crops by name, category, region, etc. (Public)
-router.get("/search", searchCrops);
+// router.get("/search", searchCrops);
 
 // GET /api/crops/:id - Get specific crop details by crop ID (Public)
 router.get("/:id", getCropById);

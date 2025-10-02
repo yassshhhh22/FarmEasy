@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
-import Crop  from "../models/crop.model.js";
+import Crop from "../models/crop.model.js";
 
 export const addCrop = asyncHandler(async (req, res) => {
   const { cropName, category, region, price, quantity, description } = req.body;
@@ -37,33 +37,137 @@ export const addCrop = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse("Crop added successfully", newCrop));
 });
 
-
-
 export const getAllCrops = asyncHandler(async (req, res) => {
-  const crops = await Crop.find({ status: "Active" })
-    .populate("farmer", "name email")
-    .sort({ createdAt: -1 });
+  const {
+    page = 1,
+    limit = 12,
+    sort = "-createdAt",
+    status = "Active",
+    category,
+    region,
+    minPrice,
+    maxPrice,
+    minQuantity,
+    maxQuantity,
+    search,
+  } = req.query;
 
-  if (!crops || crops.length === 0) {
-    throw new ApiError(404, "No crops found");
+  const q = {};
+  if (status) q.status = status; // default Active
+  if (category) q.category = category;
+  if (region) q.region = region;
+
+  if (minPrice || maxPrice) {
+    q.price = {};
+    if (minPrice) q.price.$gte = Number(minPrice);
+    if (maxPrice) q.price.$lte = Number(maxPrice);
+  }
+  if (minQuantity || maxQuantity) {
+    q.quantity = {};
+    if (minQuantity) q.quantity.$gte = Number(minQuantity);
+    if (maxQuantity) q.quantity.$lte = Number(maxQuantity);
+  }
+  if (search) {
+    const s = String(search).trim();
+    if (s) {
+      q.$or = [
+        { cropName: { $regex: s, $options: "i" } },
+        { category: { $regex: s, $options: "i" } },
+        { region: { $regex: s, $options: "i" } },
+        { description: { $regex: s, $options: "i" } },
+      ];
+    }
   }
 
-  res.status(200).json(new ApiResponse("Crops retrieved successfully", crops));
+  const pageNum = Math.max(1, Number(page));
+  const limitNum = Math.min(50, Math.max(1, Number(limit)));
+  const skip = (pageNum - 1) * limitNum;
+
+  const [items, total] = await Promise.all([
+    Crop.find(q)
+      .populate("farmer", "name email")
+      .sort(sortParser(sort))
+      .skip(skip)
+      .limit(limitNum),
+    Crop.countDocuments(q),
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { items, total, page: pageNum, limit: limitNum },
+        "Crops retrieved successfully"
+      )
+    );
 });
 
 export const getFarmerCrops = asyncHandler(async (req, res) => {
   const farmerId = req.user.id;
-  const crops = await Crop.find({ farmer: farmerId, status: "Active" })
-    .populate("farmer", "name email")
-    .sort({ createdAt: -1 });
+  const {
+    page = 1,
+    limit = 12,
+    sort = "-createdAt",
+    status, // optional filter
+    minPrice,
+    maxPrice,
+    minQuantity,
+    maxQuantity,
+    category,
+    region,
+    search,
+  } = req.query;
 
-  if (!crops || crops.length === 0) {
-    throw new ApiError(404, "No crops found for this farmer");
+  const q = { farmer: farmerId };
+  if (status) q.status = status;
+  if (category) q.category = category;
+  if (region) q.region = region;
+
+  if (minPrice || maxPrice) {
+    q.price = {};
+    if (minPrice) q.price.$gte = Number(minPrice);
+    if (maxPrice) q.price.$lte = Number(maxPrice);
+  }
+  if (minQuantity || maxQuantity) {
+    q.quantity = {};
+    if (minQuantity) q.quantity.$gte = Number(minQuantity);
+    if (maxQuantity) q.quantity.$lte = Number(maxQuantity);
+  }
+  if (search) {
+    const s = String(search).trim();
+    if (s) {
+      q.$or = [
+        { cropName: { $regex: s, $options: "i" } },
+        { category: { $regex: s, $options: "i" } },
+        { region: { $regex: s, $options: "i" } },
+        { description: { $regex: s, $options: "i" } },
+      ];
+    }
   }
 
-  res
+  const pageNum = Math.max(1, Number(page));
+  const limitNum = Math.min(50, Math.max(1, Number(limit)));
+  const skip = (pageNum - 1) * limitNum;
+
+  const [items, total] = await Promise.all([
+    Crop.find(q)
+      .populate("farmer", "name email")
+      .sort(sortParser(sort))
+      .skip(skip)
+      .limit(limitNum),
+    Crop.countDocuments(q),
+  ]);
+
+  return res
     .status(200)
-    .json(new ApiResponse("Farmer's crops retrieved successfully", crops));
+    .json(
+      new ApiResponse(
+        200,
+        { items, total, page: pageNum, limit: limitNum },
+        "Farmer crops retrieved successfully"
+      )
+    );
 });
 
 export const getCropById = asyncHandler(async (req, res) => {
@@ -102,61 +206,51 @@ export const getFlashDeals = asyncHandler(async (req, res) => {
 export const editCrop = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const farmerId = req.user.id;
-  const { name, category, region, price, quantity, description, isFlashDeal } =
-    req.body;
+  const {
+    cropName,
+    category,
+    region,
+    price,
+    quantity,
+    description,
+    isFlashDeal,
+    status,
+  } = req.body;
 
-  if (!id) {
-    throw new ApiError(400, "Crop ID is required");
-  }
+  if (!id) throw new ApiError(400, "Crop ID is required");
 
   const crop = await Crop.findById(id);
-  if (!crop) {
-    throw new ApiError(404, "Crop not found");
-  }
+  if (!crop) throw new ApiError(404, "Crop not found");
 
   if (crop.farmer.toString() !== farmerId) {
     throw new ApiError(403, "You can only edit your own crops");
   }
 
-  if (price && price < 0) {
-    throw new ApiError(400, "Price must be non-negative");
-  }
-  if (quantity && quantity < 0) {
-    throw new ApiError(400, "Quantity must be non-negative");
-  }
+  // Only update allowed fields if provided
+  if (cropName !== undefined) crop.cropName = cropName;
+  if (category !== undefined) crop.category = category;
+  if (region !== undefined) crop.region = region;
+  if (price !== undefined) crop.price = price;
+  if (quantity !== undefined) crop.quantity = quantity;
+  if (description !== undefined) crop.description = description;
+  if (typeof isFlashDeal === "boolean") crop.isFlashDeal = isFlashDeal;
+  if (status !== undefined) crop.status = status;
 
-  const updateData = {};
-  if (name) updateData.name = name;
-  if (category) updateData.category = category;
-  if (region) updateData.region = region;
-  if (price !== undefined) updateData.price = price;
-  if (quantity !== undefined) updateData.quantity = quantity;
-  if (description) updateData.description = description;
-  if (isFlashDeal !== undefined) updateData.isFlashDeal = isFlashDeal;
+  await crop.save();
 
-  const updatedCrop = await Crop.findByIdAndUpdate(
-    id,
-    updateData,
-    { new: true, runValidators: true }
-  ).populate("farmer", "name email");
-
-  res
+  return res
     .status(200)
-    .json(new ApiResponse("Crop updated successfully", updatedCrop));
+    .json(new ApiResponse(200, crop, "Crop updated successfully"));
 });
 
 export const deleteCrop = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const farmerId = req.user.id;
 
-  if (!id) {
-    throw new ApiError(400, "Crop ID is required");
-  }
+  if (!id) throw new ApiError(400, "Crop ID is required");
 
   const crop = await Crop.findById(id);
-  if (!crop) {
-    throw new ApiError(404, "Crop not found");
-  }
+  if (!crop) throw new ApiError(404, "Crop not found");
 
   if (crop.farmer.toString() !== farmerId) {
     throw new ApiError(403, "You can only delete your own crops");
@@ -164,43 +258,21 @@ export const deleteCrop = asyncHandler(async (req, res) => {
 
   await Crop.findByIdAndDelete(id);
 
-  res.status(200).json(new ApiResponse("Crop deleted successfully", null));
-});
-
-export const searchCrops = asyncHandler(async (req, res) => {
-  const { cropName, region, category, description, query } = req.query;
-
-  // Build dynamic search criteria
-  const criteria = { status: "Active" };
-  const orArray = [];
-
-  if (query && query.trim().length > 0) {
-    orArray.push(
-      { cropName: { $regex: query, $options: "i" } },
-      { region: { $regex: query, $options: "i" } },
-      { category: { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } }
-    );
-  }
-  if (cropName) criteria.cropName = { $regex: cropName, $options: "i" };
-  if (region) criteria.region = { $regex: region, $options: "i" };
-  if (category) criteria.category = { $regex: category, $options: "i" };
-  if (description) criteria.description = { $regex: description, $options: "i" };
-
-  // If query is present, use $or, else use criteria
-  const searchResults = await Crop.find(
-    orArray.length > 0 ? { status: "Active", $or: orArray } : criteria
-  )
-    .populate("farmer", "name email region")
-    .sort({ createdAt: -1 });
-
-  if (!searchResults || searchResults.length === 0) {
-    throw new ApiError(404, "No crops found matching your search");
-  }
-
-  res
+  return res
     .status(200)
-    .json(
-      new ApiResponse("Search results retrieved successfully", searchResults)
-    );
+    .json(new ApiResponse(200, {}, "Crop deleted successfully"));
 });
+
+// Helpers
+function sortParser(sort) {
+  // supports "-createdAt" or "price"
+  const obj = {};
+  if (!sort) return { createdAt: -1 };
+  const fields = String(sort).split(",");
+  for (const f of fields) {
+    if (!f) continue;
+    if (f.startsWith("-")) obj[f.slice(1)] = -1;
+    else obj[f] = 1;
+  }
+  return obj;
+}

@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import {
   User,
@@ -67,6 +65,7 @@ const Profile = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((s) => ({ ...s, [name]: value }));
+    if (error) setError("");
   };
 
   const handleSave = async () => {
@@ -87,7 +86,8 @@ const Profile = () => {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message || "Failed to update profile");
       }
-      await fetchProfile();
+      await res.json(); // consume response if needed
+      await fetchProfile(); // ensure latest data from server
       setIsEditing(false);
     } catch (e) {
       setError(e.message || "Failed to update profile");
@@ -98,6 +98,7 @@ const Profile = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
+    setError("");
   };
 
   const stats =
