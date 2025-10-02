@@ -8,6 +8,7 @@ import {
   Calendar,
   Package,
 } from "lucide-react";
+import { api } from "../lib/api";
 
 const CropDetails = () => {
   const { id } = useParams();
@@ -17,29 +18,20 @@ const CropDetails = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchCropDetails = async () => {
+    const load = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/crops/crop/${id}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch crop details");
-        }
-        const data = await response.json();
-        setCrop(data.data || data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to load crop details");
-        console.error("Error loading crop details:", err);
+        const res = await api(`/api/crops/${id}`);
+        if (!res.ok) throw new Error("Failed to load crop");
+        const d = await res.json();
+        setCrop(d.data || d);
+      } catch (e) {
+        setError(e.message || "Failed to load crop");
       } finally {
         setLoading(false);
       }
     };
-
-    if (id) {
-      fetchCropDetails();
-    }
+    load();
   }, [id]);
 
   if (loading) {

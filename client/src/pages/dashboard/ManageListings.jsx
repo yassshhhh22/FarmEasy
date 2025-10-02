@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../lib/api"; // add this
+import { api } from "../../lib/api"; // add
 import { useAuth } from "../../contexts/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
@@ -47,20 +47,15 @@ const ManageListings = () => {
     try {
       setLoading(true);
       setError("");
-
-      const res = await api("/api/crops/my-crops"); // use api wrapper
+      const res = await api("/api/crops/my-crops");
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to fetch crops");
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Failed to fetch crops");
       }
-      const data = await res.json();
-
-      console.log("Fetched crops:", data); // Debug log
-      setCrops(data.data || data.crops || []); // Handle different response formats
-    } catch (err) {
-      console.error("Error fetching crops:", err);
-      setError(err.message);
-      setCrops([]);
+      const d = await res.json();
+      setCrops(d.data || d);
+    } catch (e) {
+      setError(e.message || "Failed to fetch crops");
     } finally {
       setLoading(false);
     }
@@ -68,23 +63,17 @@ const ManageListings = () => {
 
   const handleDeleteCrop = async (cropId) => {
     setDeleteLoading(true);
-
     try {
       const res = await api(`/api/crops/delete/${cropId}`, {
         method: "DELETE",
-      }); // use api wrapper
+      });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to delete crop");
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Failed to delete crop");
       }
-
-      setCrops(crops.filter((crop) => crop._id !== cropId));
-      setShowDeleteModal(false);
-      setSelectedCrop(null);
-      // Removed alert - will add toast later
-    } catch (err) {
-      console.error("Error deleting crop:", err.message);
-      // Removed alert - will add toast later
+      await fetchFarmerCrops();
+    } catch (e) {
+      setError(e.message || "Failed to delete crop");
     } finally {
       setDeleteLoading(false);
     }

@@ -17,21 +17,16 @@ const BuyerDashboard = () => {
     const loadCrops = async () => {
       try {
         setLoading(true);
-        const res = await api("/api/crops/all"); // use api wrapper
-        if (!res.ok) {
-          throw new Error("Failed to fetch crops");
-        }
+        const res = await api("/api/crops/all"); // use wrapper
+        if (!res.ok) throw new Error("Failed to fetch crops");
         const data = await res.json();
         setCrops(data.data || data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to load crops");
-        console.error("Error loading crops:", err);
+      } catch (e) {
+        setError(e.message || "Failed to fetch crops");
       } finally {
         setLoading(false);
       }
     };
-
     loadCrops();
   }, []);
 
