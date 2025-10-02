@@ -89,7 +89,8 @@ const CropCard = ({ crop }) => {
 };
 
 const CropGrid = ({ crops = [] }) => {
-  if (crops.length === 0) {
+  const list = Array.isArray(crops) ? crops : []; // guard
+  if (list.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
         No crops available at the moment
@@ -99,7 +100,7 @@ const CropGrid = ({ crops = [] }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {crops.map((crop) => (
+      {list.map((crop) => (
         <CropCard key={crop._id} crop={crop} />
       ))}
     </div>

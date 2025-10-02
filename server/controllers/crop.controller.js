@@ -183,7 +183,9 @@ export const getCropById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Crop not found");
   }
 
-  res.status(200).json(new ApiResponse("Crop retrieved successfully", crop));
+  res
+    .status(200)
+    .json(new ApiResponse(200, crop, "Crop retrieved successfully"));
 });
 
 export const getFlashDeals = asyncHandler(async (req, res) => {

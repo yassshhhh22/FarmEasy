@@ -7,20 +7,25 @@ import ContractSummaryCard from "../../components/ContractSummaryCard";
 import MarketInsight from "../../components/MarketInsight";
 import SpendingOverview from "../../components/SpendingOverview";
 import { api } from "../../lib/api"; // add this
+import { useNavigate } from "react-router-dom"; // add this
 
 const BuyerDashboard = () => {
   const [crops, setCrops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate(); // add this
 
   useEffect(() => {
     const loadCrops = async () => {
       try {
         setLoading(true);
-        const res = await api("/api/crops/all"); // use wrapper
+        const res = await api("/api/crops/all");
         if (!res.ok) throw new Error("Failed to fetch crops");
-        const data = await res.json();
-        setCrops(data.data || data);
+        const d = await res.json();
+        const data = d.data || d;
+        const arr =
+          data.items || data.crops || (Array.isArray(data) ? data : []);
+        setCrops(arr); // ensure array
       } catch (e) {
         setError(e.message || "Failed to fetch crops");
       } finally {
@@ -72,7 +77,10 @@ const BuyerDashboard = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Recommended for You
               </h2>
-              <button className="text-blue-600 dark:text-blue-400 hover:underline">
+              <button
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+                onClick={() => navigate("/search")}
+              >
                 View All
               </button>
             </div>
